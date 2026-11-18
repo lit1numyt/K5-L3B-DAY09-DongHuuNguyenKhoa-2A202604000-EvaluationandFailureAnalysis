@@ -4,19 +4,20 @@
 > Không cần API key: MockLLM + judge replay. **Không Langfuse / OTel** (observability học ở Day 14).
 
 ## Bạn sẽ làm gì (**bài cá nhân** · giờ trên lớp và hạn nộp theo ca làm bài, xem LMS của ca)
+
 Giờ trong bảng là của ca 13:30–17:00; ca khác dời các mốc tương ứng.
 
-| M | Giờ | Việc | Lệnh kiểm tra |
-|---|---|---|---|
-| M0 | 13:30 | Fork repo này, chép `src/` của repo gốc Day 8 vào, cài đặt và sinh eval set | `python -m lab9.smoke` và `python -m lab9.evalset --build` |
-| M1 | 13:45 | Taxonomy ≥5 failure mode từ trace; gắn `failure_modes` cho eval set | `python -m lab9.evalset --check` |
-| M2 | 14:30 | Judge-the-judge: cài `kappa`, P/R, Rogan-Gladen; audit ≥5 bất đồng | `python -m lab9.judge --csv data/eval/judge_tone_public.csv --audit 5` |
-| M3 | 15:15 | Trajectory assertion: `ApprovalBypass`, `RefundAmountCorrect` + 1 metric cho FM-08 | `python -m pytest -q -m student -o addopts= -k "lab9 and not advanced"` |
-| M4 | 16:00 | Paired bootstrap + CI gate: chặn `seeded_regression`, cho qua `fixed` | `python -m lab9.gate ...` (exit 1 / exit 0) |
-| — | 16:45 | Eval card + PRD v1.1; mở PR trong bản fork, CI xanh thì merge vào `main` (Core 60đ nên xong trên lớp) | xem `SUBMISSION.md` |
-| M5 | sau 17:00 | **Advanced.** Eval set v2: adversarial pack + `fm_map.yaml`; slice gate (`money_movement`, `adversarial`) | `python -m lab9.evalset --v2 --build` |
-| M6 | sau 17:00 | **Advanced.** Nhiễu: A/A trên 2 bộ seed, `pass@k` / `pass^k`, ngưỡng `pass_hat_5` | `python -m lab9.mutation --aa 66,77,88,99,110 ...` |
-| M7 | sau 17:00 | **Expert.** Gate chống gian lận eval: `integrity_check` + ratchet; scorecard đột biến | `python -m lab9.traps` và `python -m lab9.mutation ...` |
+| M  | Giờ      | Việc                                                                                                                 | Lệnh kiểm tra                                                           |
+| -- | --------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| M0 | 13:30     | Fork repo này, chép `src/` của repo gốc Day 8 vào, cài đặt và sinh eval set                                | `python -m lab9.smoke` và `python -m lab9.evalset --build`           |
+| M1 | 13:45     | Taxonomy ≥5 failure mode từ trace; gắn `failure_modes` cho eval set                                              | `python -m lab9.evalset --check`                                        |
+| M2 | 14:30     | Judge-the-judge: cài `kappa`, P/R, Rogan-Gladen; audit ≥5 bất đồng                                             | `python -m lab9.judge --csv data/eval/judge_tone_public.csv --audit 5`  |
+| M3 | 15:15     | Trajectory assertion: `ApprovalBypass`, `RefundAmountCorrect` + 1 metric cho FM-08                                | `python -m pytest -q -m student -o addopts= -k "lab9 and not advanced"` |
+| M4 | 16:00     | Paired bootstrap + CI gate: chặn `seeded_regression`, cho qua `fixed`                                            | `python -m lab9.gate ...` (exit 1 / exit 0)                             |
+| — | 16:45     | Eval card + PRD v1.1; mở PR trong bản fork, CI xanh thì merge vào `main` (Core 60đ nên xong trên lớp)       | xem `SUBMISSION.md`                                                     |
+| M5 | sau 17:00 | **Advanced.** Eval set v2: adversarial pack + `fm_map.yaml`; slice gate (`money_movement`, `adversarial`) | `python -m lab9.evalset --v2 --build`                                   |
+| M6 | sau 17:00 | **Advanced.** Nhiễu: A/A trên 2 bộ seed, `pass@k` / `pass^k`, ngưỡng `pass_hat_5`                    | `python -m lab9.mutation --aa 66,77,88,99,110 ...`                      |
+| M7 | sau 17:00 | **Expert.** Gate chống gian lận eval: `integrity_check` + ratchet; scorecard đột biến                    | `python -m lab9.traps` và `python -m lab9.mutation ...`              |
 
 ## Cài đặt (M0): fork repo này, chép code gốc Day 8 vào
 
@@ -33,6 +34,7 @@ Repo này **không chạy độc lập**: nó chỉ có `src/lab9/`, docs và wo
 Sau đó vào tab **Actions** của bản fork, bấm bật workflow: GitHub tắt sẵn workflow trên repo fork, không bật thì job `eval-gate` không chạy.
 
 **2. Trên máy** (macOS / Linux):
+
 ```bash
 # Clone bản fork của bạn và repo gốc Day 8 vào cùng một thư mục
 git clone https://github.com/<github-cua-ban>/K5-L3A-DAY09-HoVaTen-MSSV-EvaluationandFailureAnalysis lab9
@@ -54,6 +56,7 @@ cd .. && git add -A && git commit -m "chore: build eval set v1"
 ```
 
 Windows (PowerShell), cùng các bước trên:
+
 ```powershell
 git clone https://github.com/<github-cua-ban>/K5-L3A-DAY09-HoVaTen-MSSV-EvaluationandFailureAnalysis lab9
 git clone https://github.com/VinUni-AI20k/K5-Day8-From-Workflows-to-Agents day8-goc
@@ -72,16 +75,19 @@ cd ..; git add -A; git commit -m "chore: build eval set v1"
 Kiểm tra nhanh sau bước 2: `src/` có cả `lab8/` và `lab9/`, và `python -m lab9.smoke` in `M0 PASS`. Từ đây không sửa file nào trong `src/lab8/`; lỡ sửa thì `git restore src/lab8`.
 
 **Baseline cho CI (M4).** Job `eval-gate` đọc `src/reports/baseline_v1.json` trên nhánh, nên file này phải được commit. Sinh sau khi đã hoàn thành M1–M3 trên nhánh làm bài (`-f` để chắc chắn không bị `.gitignore` bỏ qua):
+
 ```bash
 cd src
 python -m lab9.eval --shape swarm --spec config/metric_spec.yaml --out reports/baseline_v1.json
 git add -f reports/baseline_v1.json && git commit -m "chore: add eval baseline v1"
 ```
+
 Workflow chạy khi mở PR (hoặc chạy tay ở tab Actions), không chạy khi push thẳng lên `main`. Mở PR **trong bản fork của bạn** (`starter/d09` → `main`); GitHub hay chọn sẵn repo gốc làm đích, nhớ đổi "base repository" về bản fork.
 
 Ở M0, cả hai lệnh trả exit 0. Các item mới có `failure_modes` rỗng. Sau khi gắn mã lỗi từ taxonomy ở M1, chạy `python -m lab9.evalset --check` và kiểm tra kết quả có 0 lỗi.
 
 **Commit report trước khi merge.** `.gitignore` bỏ qua `src/reports/`, nên `git add -A` không đưa report lên repo. Người chấm mở link repo chỉ thấy nhánh `main`, nên sau M4 (và M5–M7 nếu làm) commit mọi report sinh bằng script:
+
 ```bash
 cd src
 python -m lab9.eval --shape fixed && python -m lab9.eval --shape seeded_regression
@@ -115,24 +121,26 @@ python -m lab9.traps --pr reports/eval_slice_regression.json --baseline reports/
 python -m pytest -q -m student -o addopts= -k advanced     # vector công khai; bộ chấm dùng vector ẩn
 ```
 
-| Variant / trap | Thực tế tương ứng | Gate đúng phải |
-|---|---|---|
-| `honest_refactor` | đổi lời văn, thêm tool call, cùng kết quả | merge (không báo nhầm) |
-| `slice_regression` | lỗi cộng điều khoản chỉ ở claim có hoàn tiền, seed lẻ; trung bình vẫn trên sàn | block qua slice `money_movement` |
-| `flaky_regression` | lỗi làm tròn 1/5 seed | block qua `pass_hat_5` |
-| `evaluator_errors_as_nan` | grader crash, giá trị thành None/NaN rồi rơi khỏi trung bình | block (integrity) |
-| `dropped_failing_rows`, `cherry_picked_seeds` | bỏ dòng fail / chọn seed đẹp | block (integrity: số dòng, tập (item, seed)) |
-| `loosened_spec` | hạ ngưỡng, bỏ slice trong cùng PR | block (ratchet với `--base-spec`) |
+| Variant / trap                                    | Thực tế tương ứng                                                                        | Gate đúng phải                               |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `honest_refactor`                               | đổi lời văn, thêm tool call, cùng kết quả                                             | merge (không báo nhầm)                       |
+| `slice_regression`                              | lỗi cộng điều khoản chỉ ở claim có hoàn tiền, seed lẻ; trung bình vẫn trên sàn | block qua slice `money_movement`              |
+| `flaky_regression`                              | lỗi làm tròn 1/5 seed                                                                      | block qua `pass_hat_5`                        |
+| `evaluator_errors_as_nan`                       | grader crash, giá trị thành None/NaN rồi rơi khỏi trung bình                           | block (integrity)                               |
+| `dropped_failing_rows`, `cherry_picked_seeds` | bỏ dòng fail / chọn seed đẹp                                                             | block (integrity: số dòng, tập (item, seed)) |
+| `loosened_spec`                                 | hạ ngưỡng, bỏ slice trong cùng PR                                                        | block (ratchet với `--base-spec`)            |
 
 Lưu ý: một bug chỉ xuất hiện ở 1/3 seed (`rare`) **không** phát hiện ổn định được với 5 seed; nêu điều này trong eval card như một giới hạn về cỡ mẫu, đừng hạ ngưỡng cho tới khi gate "bắt được" nó.
 
 ## Công nghệ (kiểm tra 11/2026)
+
 - **pydantic-evals 2.68** — harness chính: `Dataset` / `Case` / `Evaluator`, chạy offline, không cần OTel (ta không dùng span evaluator).
 - **scipy.stats.bootstrap(paired=True)** — CI cho hiệu hai phiên bản trên cùng item.
 - Judge calibration theo thực hành hiện hành: nhãn nhị phân PASS/FAIL, κ ≥ 0.6, P ≥ 0.8, R ≥ 0.7, κ không xác định ⇒ FAIL, hiệu chỉnh tỉ lệ lỗi bằng Rogan-Gladen.
 - Bonus (không bắt buộc): port 3 grader sang **Inspect AI** hoặc **DeepEval** và so kết quả.
 
 ## Bản đồ file
+
 ```
 src/lab9/evalset.py   eval set v1 + provenance + check        (TODO M1: failure_modes)
 src/lab9/graders.py   pydantic-evals Evaluators               (TODO M3: 2 grader)
@@ -147,4 +155,5 @@ src/lab9/traps.py     sinh report đã bị làm đẹp để thử integrity_ch
 src/config/metric_spec_v2.yaml, fm_map.yaml, data/eval/adversarial_v2.json             (TODO M5, M6)
 src/config/metric_spec.yaml   ngưỡng (ratchet: cùng eval-set version chỉ được chặt hơn)
 ```
+
 Quy tắc: không sửa file `lab8/`; không sửa tay `reports/`; không đặt nhãn inline trong item.
